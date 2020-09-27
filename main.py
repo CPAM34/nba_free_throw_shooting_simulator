@@ -18,7 +18,7 @@ from PyInquirer import (Token, ValidationError, Validator, print_json, prompt,
 from pyfiglet import figlet_format
 
 from nba_api.stats.static import players
-from nba_api.stats.endpoints import playercareerstats
+from nba_api.stats.endpoints import (playercareerstats, commonplayerinfo)
 
 from PyInquirer import (Token, ValidationError, Validator, print_json, prompt,
                         style_from_dict)
@@ -70,30 +70,68 @@ def log(string, color, font="slant", figlet=False):
 class PlayerValidator(Validator):
 
     def validate(self, name):
+        """
+        Checks to see if the player input is of an actual player's name
+
+        :param name: the player's inputted name
+        """
         if len(name.text):
             player_match = [player for player in nba_players if player['full_name'] == name][0]
             if player_match == name.text:
                 return True
             else:
                 raise ValidationError(
-                    message="Invalid email",
+                    message="That is not an NBA player",
                     cursor_position=len(name.text))
         else:
             raise ValidationError(
                 message="You can't leave this blank",
-                cursor_position=len(email.text))
+                cursor_position=len(name.text))
 
-def askPlayer():
-    questions = [
+
+def ask_for_player():
+    """
+    Asks user to input an NBA player's name
+
+    :return: The player's name
+    """
+    question = [
         {
             'type': 'input',
             'name': 'player_name',
             'message': 'Enter the player\'s name',
             'validate': PlayerValidator,
-        },
+        }
     ]
-    answers = prompt(questions, style=style)
-    return answers
+    answer = prompt(question, style=style)
+    return answer
+
+
+def clarify_player(matches):
+    """
+    Asks user to clarify a specific player in case of multiple players with the same name
+
+    :param matches: A list of possible players that are a match for the name provided earlier
+    :return: Returns the ID of the selected player
+    """
+    question = [
+        {
+            'type': 'list',
+            'name': 'exact_player',
+            'message': 'There are ' + len(matches) + ' players with that name. Please chose one:',
+            'choices': []
+        }
+    ]
+    for match in matches:
+        player = commonplayerinfo(player_id=match['id'])[]
+        question[0].choices.add({
+            'name': "{} {} {} - Born {}".format(player['position'], player['first_name'],
+                                                            player['last_name'], player['birthdate']),
+            'value': match['id']
+        })
+
+    answer = prompt(question, style=style)
+    return answer
 
 
 def main():
@@ -102,6 +140,12 @@ def main():
     """
     log("NBA Free Throw Shooting Simulator", color="red", figlet=True)
     log("Welcome to the NBA Free Throw Simulator command line tool", "green")
+    player = ask_for_player()
+    matches = [player for player in nba_players if player['full_name'] == name]
+    player_id = matches[0]['id']
+    if len(matches) > 1:
+        player_id = clarify_player(matches)
+    playercareerstats.PlayerCareerStats(player_id=player_id)
 
 
 def get_stats(name):
