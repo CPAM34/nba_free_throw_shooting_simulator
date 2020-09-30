@@ -1,16 +1,14 @@
 # This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+import Game
 
 import os
 import re
 
 import six
-
 import PyInquirer
 import clint
 import requests
+import statistics
 
 from PyInquirer import (Token, ValidationError, Validator, print_json, prompt,
                         style_from_dict)
@@ -123,7 +121,7 @@ def clarify_player(matches):
         }
     ]
     for match in matches:
-        player = commonplayerinfo(player_id=match['id'])[]
+        player = commonplayerinfo(player_id=match['id'])
         question[0].choices.add({
             'name': "{} {} {} - Born {}".format(player['position'], player['first_name'],
                                                             player['last_name'], player['birthdate']),
@@ -141,11 +139,12 @@ def main():
     log("NBA Free Throw Shooting Simulator", color="red", figlet=True)
     log("Welcome to the NBA Free Throw Simulator command line tool", "green")
     player = ask_for_player()
-    matches = [player for player in nba_players if player['full_name'] == name]
+    matches = [player for player in nba_players if player['full_name'] == player.text]
     player_id = matches[0]['id']
     if len(matches) > 1:
         player_id = clarify_player(matches)
-    playercareerstats.PlayerCareerStats(player_id=player_id)
+    stats = playercareerstats.PlayerCareerStats(player_id=player_id).get_data_frames()[0]
+    game = Game(player_name=player['name'], ft_pct=statistics.mean(stats['ft_pct']), nba_stats_id=player_id)
 
 
 def get_stats(name):
