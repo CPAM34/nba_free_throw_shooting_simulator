@@ -4,11 +4,11 @@ import Game
 import os
 import re
 
-import six
 import PyInquirer
 import clint
 import requests
 import statistics
+import six
 
 from PyInquirer import (Token, ValidationError, Validator, print_json, prompt,
                         style_from_dict)
@@ -132,12 +132,30 @@ def clarify_player(matches):
     return answer
 
 
+def ask_if_done():
+    """
+    Asks user to choose whether to shoot or end the game
+
+    :return: The user's choice
+    """
+    question = [
+        {
+            'type': 'input',
+            'name': 'player_name',
+            'message': 'What would you like to do?',
+            'choices': ['Take a shot', 'I\'m done, let\'s end this']
+        }
+    ]
+    answer = prompt(question, style=style)
+    return answer
+
+
 def main():
     """
     A Python CLI designed to simulate an NBA player's ability to shoot free throws
     """
     log("NBA Free Throw Shooting Simulator", color="red", figlet=True)
-    log("Welcome to the NBA Free Throw Simulator command line tool", "green")
+    log("Welcome to the NBA Free Throw Simulator command line tool", color="green")
     player = ask_for_player()
     matches = [player for player in nba_players if player['full_name'] == player.text]
     player_id = matches[0]['id']
@@ -145,6 +163,13 @@ def main():
         player_id = clarify_player(matches)
     stats = playercareerstats.PlayerCareerStats(player_id=player_id).get_data_frames()[0]
     game = Game(player_name=player['name'], ft_pct=statistics.mean(stats['ft_pct']), nba_stats_id=player_id)
+    while not game.done:
+        take_shot = ask_if_done()
+        if take_shot:
+            good = game.shoot_ft()
+        else:
+            game.im_done()
+    log("Thank you so much for playing my game!", color="Blue", figlet=True)
 
 
 def get_stats(name):

@@ -1,5 +1,7 @@
 import random
 
+from main import log
+
 
 class Game:
     def __init__(self, player_name, ft_pct, nba_stats_id):
@@ -10,11 +12,17 @@ class Game:
         self.ft_attempts = 0
         self.done = False
 
-    def done(self):
+    def im_done(self):
         self.done = True
 
     def shoot_ft(self):
         accuracy = random.radint(1,100)
         if accuracy < self.ft_pct:
-            return True
-        return False
+            log("SWISH!", color="Green", figlet=True)
+            self.ft_made += 1
+            self.ft_attempts += 1
+            log("Currently {}/{} from the line", color="Green")
+        else:
+            log("CLANK!", color="Red", figlet=True)
+            self.ft_attempts += 1
+            log("Currently {}/{} from the line", color="Red")
