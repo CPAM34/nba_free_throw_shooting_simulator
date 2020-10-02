@@ -1,19 +1,13 @@
 # This is a sample Python script.
-import Game
+from Game import Game
+from Log import log
 
 import os
 import re
 
-import PyInquirer
 import clint
 import requests
 import statistics
-import six
-
-from PyInquirer import (Token, ValidationError, Validator, print_json, prompt,
-                        style_from_dict)
-
-from pyfiglet import figlet_format
 
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import (playercareerstats, commonplayerinfo)
@@ -21,17 +15,6 @@ from nba_api.stats.endpoints import (playercareerstats, commonplayerinfo)
 from PyInquirer import (Token, ValidationError, Validator, print_json, prompt,
                         style_from_dict)
 
-
-try:
-    import colorama
-    colorama.init()
-except ImportError:
-    colorama = None
-
-try:
-    from termcolor import colored
-except ImportError:
-    colored = None
 
 style = style_from_dict({
     Token.QuestionMark: '#fac731 bold',
@@ -43,27 +26,6 @@ style = style_from_dict({
     Token.Question: '',
 })
 
-nba_players = players.get_players()
-
-
-def log(string, color, font="slant", figlet=False):
-    """
-    Outputs a string
-
-    :param string: The string you are looking to output
-    :param color: The color in which you'd like the string to be outputted
-    :param font: The font in which you'd like the string to be outputted. Defaults to "slant"
-    :param figlet: If set to true, creates ASCII art
-    """
-    if colored:
-        if not figlet:
-            six.print_(colored(string, color))
-        else:
-            six.print_(colored(figlet_format(
-                string, font=font), color))
-    else:
-        six.print_(string)
-
 
 class PlayerValidator(Validator):
 
@@ -74,10 +36,11 @@ class PlayerValidator(Validator):
         :param name: the player's inputted name
         """
         if len(name.text):
-            player_match = [player for player in nba_players if player['full_name'] == name][0]
-            if player_match == name.text:
+            try:
+                nba_players = players.get_players()
+                player_match = [player for player in nba_players if player['full_name'] == name.text][0]
                 return True
-            else:
+            except:
                 raise ValidationError(
                     message="That is not an NBA player",
                     cursor_position=len(name.text))
@@ -116,15 +79,15 @@ def clarify_player(matches):
         {
             'type': 'list',
             'name': 'exact_player',
-            'message': 'There are ' + len(matches) + ' players with that name. Please chose one:',
+            'message': 'There are {} players with that name. Please chose one:'.format(len(matches)),
             'choices': []
         }
     ]
     for match in matches:
-        player = commonplayerinfo(player_id=match['id'])
-        question[0].choices.add({
+        player = commonplayerinfo.CommonPlayerInfo(player_id=match['id']).get_data_frames()[0]
+        question[0]['choices'].append({
             'name': "{} {} {} - Born {}".format(player['position'], player['first_name'],
-                                                            player['last_name'], player['birthdate']),
+                                                player['last_name'], player['birthdate']),
             'value': match['id']
         })
 
@@ -140,8 +103,8 @@ def ask_if_done():
     """
     question = [
         {
-            'type': 'input',
-            'name': 'player_name',
+            'type': 'list',
+            'name': 'choice',
             'message': 'What would you like to do?',
             'choices': ['Take a shot', 'I\'m done, let\'s end this']
         }
@@ -151,29 +114,32 @@ def ask_if_done():
 
 
 def main():
-    """
-    A Python CLI designed to simulate an NBA player's ability to shoot free throws
-    """
     log("NBA Free Throw Shooting Simulator", color="red", figlet=True)
     log("Welcome to the NBA Free Throw Simulator command line tool", color="green")
+    log("Populating NBA Players...", color="blue")
+    nba_players = players.get_players()
+    log("Populated!", color="blue")
     player = ask_for_player()
-    matches = [player for player in nba_players if player['full_name'] == player.text]
+    matches = [nba_player for nba_player in nba_players if nba_player['full_name'] == player['player_name']]
     player_id = matches[0]['id']
     if len(matches) > 1:
         player_id = clarify_player(matches)
+    log("Retrieving stats for {}...".format(player['player_name']), color="blue")
     stats = playercareerstats.PlayerCareerStats(player_id=player_id).get_data_frames()[0]
-    game = Game(player_name=player['name'], ft_pct=statistics.mean(stats['ft_pct']), nba_stats_id=player_id)
+    ft_pct = statistics.mean(stats.FT_PCT.values) * 100
+    log("Stats retrieved!", color="blue")
+    game = Game(player_name=player['player_name'], ft_pct=ft_pct, nba_stats_id=player_id)
     while not game.done:
         take_shot = ask_if_done()
-        if take_shot:
-            good = game.shoot_ft()
+        if take_shot['choice'] == "Take a shot":
+            game.shoot_ft()
         else:
             game.im_done()
-    log("Thank you so much for playing my game!", color="Blue", figlet=True)
+    log("Thank you so much for playing my game!", color="blue", figlet=True)
 
 
-def get_stats(name):
-    pass
+def get_stats(game):
+    return game
 
 
 # Press the green button in the gutter to run the script.

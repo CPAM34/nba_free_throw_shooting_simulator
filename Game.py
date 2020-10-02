@@ -1,6 +1,5 @@
+from Log import log
 import random
-
-from main import log
 
 
 class Game:
@@ -16,13 +15,13 @@ class Game:
         self.done = True
 
     def shoot_ft(self):
-        accuracy = random.radint(1,100)
+        accuracy = random.randint(1, 100)
         if accuracy < self.ft_pct:
-            log("SWISH!", color="Green", figlet=True)
+            log("SWISH!", color="green", figlet=True)
             self.ft_made += 1
             self.ft_attempts += 1
-            log("Currently {}/{} from the line", color="Green")
+            log("Currently {}/{} from the line".format(self.ft_made, self.ft_attempts), color="green")
         else:
-            log("CLANK!", color="Red", figlet=True)
+            log("CLANK!", color="red", figlet=True)
             self.ft_attempts += 1
-            log("Currently {}/{} from the line", color="Red")
+            log("Currently {}/{} from the line".format(self.ft_made, self.ft_attempts), color="red")
