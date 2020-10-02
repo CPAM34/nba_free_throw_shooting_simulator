@@ -9,6 +9,7 @@ import clint
 import requests
 import statistics
 
+from datetime import datetime
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import (playercareerstats, commonplayerinfo)
 
@@ -85,9 +86,10 @@ def clarify_player(matches):
     ]
     for match in matches:
         player = commonplayerinfo.CommonPlayerInfo(player_id=match['id']).get_data_frames()[0]
+        birthdate = datetime.strptime(player.BIRTHDATE.values[0], '%Y-%m-%dT%H:%M:%S').strftime("%B %-d, %Y")
         question[0]['choices'].append({
-            'name': "{} {} {} - Born {}".format(player['position'], player['first_name'],
-                                                player['last_name'], player['birthdate']),
+            'name': "{} {} - {} - Born {}".format(player.FIRST_NAME.values[0], player.LAST_NAME.values[0],
+                                                  player.POSITION.values[0], birthdate),
             'value': match['id']
         })
 
@@ -123,7 +125,7 @@ def main():
     matches = [nba_player for nba_player in nba_players if nba_player['full_name'] == player['player_name']]
     player_id = matches[0]['id']
     if len(matches) > 1:
-        player_id = clarify_player(matches)
+        player_id = clarify_player(matches)['exact_player']
     log("Retrieving stats for {}...".format(player['player_name']), color="blue")
     stats = playercareerstats.PlayerCareerStats(player_id=player_id).get_data_frames()[0]
     ft_pct = statistics.mean(stats.FT_PCT.values) * 100
