@@ -38,6 +38,7 @@ class PlayerValidator(Validator):
         """
         if len(name.text):
             try:
+                # Find NBA player matching the input name, raise an error if not found
                 nba_players = players.get_players()
                 player_match = [player for player in nba_players if player['full_name'] == name.text][0]
                 return True
@@ -46,6 +47,7 @@ class PlayerValidator(Validator):
                     message="That is not an NBA player",
                     cursor_position=len(name.text))
         else:
+            # Raise an error if field left blank
             raise ValidationError(
                 message="You can't leave this blank",
                 cursor_position=len(name.text))
@@ -85,6 +87,7 @@ def clarify_player(matches):
         }
     ]
     for match in matches:
+        # Populate choices with specific player characteristics when a name is associated with multiple players
         player = commonplayerinfo.CommonPlayerInfo(player_id=match['id']).get_data_frames()[0]
         birthdate = datetime.strptime(player.BIRTHDATE.values[0], '%Y-%m-%dT%H:%M:%S').strftime("%B %-d, %Y")
         question[0]['choices'].append({
@@ -116,22 +119,28 @@ def ask_if_done():
 
 
 def main():
+    # Welcomes the user and prepares the retrieves the list of players to reference the user's input to
     log("NBA Free Throw Shooting Simulator", color="red", figlet=True)
     log("Welcome to the NBA Free Throw Simulator command line tool", color="green")
     log("Populating NBA Players...", color="blue")
     nba_players = players.get_players()
     log("Populated!", color="blue")
+    # Check for match within between input and list of players after user makes prompted input
     player = ask_for_player()
     matches = [nba_player for nba_player in nba_players if nba_player['full_name'] == player['player_name']]
     player_id = matches[0]['id']
     if len(matches) > 1:
+        # If there are multiple players matching a name, prompt user for follow-up choice
         player_id = clarify_player(matches)['exact_player']
+    # Retrieve stats for selected player, get player's career FT%
     log("Retrieving stats for {}...".format(player['player_name']), color="blue")
     stats = playercareerstats.PlayerCareerStats(player_id=player_id).get_data_frames()[0]
     ft_pct = statistics.mean(stats.FT_PCT.values) * 100
     log("Stats retrieved!", color="blue")
+    # Initialize game
     game = Game(player_name=player['player_name'], ft_pct=ft_pct, nba_stats_id=player_id)
     while not game.done:
+        # Keep asking the user whethe rhe'd like to shoot/not till user elects not to shoot
         take_shot = ask_if_done()
         if take_shot['choice'] == "Take a shot":
             game.shoot_ft()
@@ -141,6 +150,7 @@ def main():
 
 
 def get_stats(game):
+    # TODO: Implement a charting solution where player can chart simulator results with real life results
     return game
 
 
