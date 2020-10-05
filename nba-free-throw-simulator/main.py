@@ -1,19 +1,16 @@
-# This is a sample Python script.
 from Game import Game
 from Log import log
 
 import os
 import re
 
-import clint
-import requests
 import statistics
 
 from datetime import datetime
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import (playercareerstats, commonplayerinfo)
 
-from PyInquirer import (Token, ValidationError, Validator, print_json, prompt,
+from PyInquirer import (Token, ValidationError, Validator, prompt,
                         style_from_dict)
 
 
